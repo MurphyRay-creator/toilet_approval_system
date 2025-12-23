@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}申请详情 - 上厕所审批系统{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h4 class="mb-0"><i class="bi bi-file-text"></i> 申请详情 #{{ request.id }}</h4>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">申请信息</h5>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <th width="40%">申请人:</th>
+                                        <td>{{ applicant.username }} ({{ applicant.role }})</td>
+                                    </tr>
+                                    <tr>
+                                        <th>审批人:</th>
+                                        <td>{{ approver.username }} ({{ approver.role }})</td>
+                                    </tr>
+                                    <tr>
+                                        <th>申请时间:</th>
+                                        <td>{{ request.apply_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>状态:</th>
+                                        <td>
+                                            <span class="badge bg-{{ 'success' if request.status=='approved' else 'danger' if request.status=='rejected' else 'warning' if request.status=='pending' else 'secondary' }}">
+                                                {{ request.get_status_text() }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        {% if request.status in ['approved', 'rejected'] %}
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">审批信息</h5>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <th width="40%">审批时间:</th>
+                                        <td>{{ request.approve_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>审批意见:</th>
+                                        <td>{{ request.notes or '无' }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">申请原因</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="p-3 bg-light rounded">
+                            {{ request.reason|replace('\n', '<br>')|safe }}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{{ url_for('view_my_requests') if request.applicant_id == current_user.id else url_for('view_requests_to_approve') }}" 
+                       class="btn btn-secondary me-md-2">
+                        返回
+                    </a>
+                    
+                    {% if request.status == 'pending' %}
+                        {% if request.approver_id == current_user.id %}
+                        <a href="{{ url_for('approve_request', request_id=request.id) }}" class="btn btn-warning">
+                            审批此申请
+                        </a>
+                        {% elif request.applicant_id == current_user.id %}
+                        <a href="{{ url_for('cancel_request', request_id=request.id) }}" class="btn btn-danger"
+                           onclick="return confirm('确定要取消此申请吗？')">
+                            取消申请
+                        </a>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

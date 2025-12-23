@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}提交申请 - 上厕所审批系统{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="bi bi-plus-circle"></i> 提交上厕所申请</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> 
+                    根据系统规则，您的申请将自动提交给 {% if current_user.role == 'A' %}B{% else %}A{% endif %} 审批。
+                </div>
+                
+                <form method="POST" action="{{ url_for('submit_request') }}">
+                    <!-- 移除 csrf_token -->
+                    
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">原因</label>
+                        <textarea class="form-control" id="reason" name="reason" rows="5" 
+                                  placeholder="请详细说明上厕所的原因..." required></textarea>
+                        <div class="form-text">请如实填写原因，这将影响审批结果。</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="urgency" class="form-label">紧急程度</label>
+                        <select class="form-select" id="urgency" name="urgency">
+                            <option value="normal" selected>一般</option>
+                            <option value="urgent">紧急</option>
+                            <option value="emergency">非常紧急</option>
+                        </select>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary me-md-2">取消</a>
+                        <button type="submit" class="btn btn-primary">提交申请</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

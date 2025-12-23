@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}登录 - 上厕所审批系统{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="bi bi-door-closed"></i> 登录系统</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('login') }}">
+                    <!-- 移除 csrf_token 行 -->
+                    
+                    <div class="mb-3">
+                        <label for="username" class="form-label">用户名</label>
+                        <input type="text" class="form-control" id="username" name="username" 
+                               placeholder="请输入用户名" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label">密码</label>
+                        <input type="password" class="form-control" id="password" name="password" 
+                               placeholder="请输入密码" required>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">登录</button>
+                    </div>
+                </form>
+                
+                <hr>
+                
+                <div class="alert alert-info">
+                    <h5><i class="bi bi-info-circle"></i> 测试账号</h5>
+                    <ul class="mb-0">
+                        <li>用户名: <strong>A</strong>, 密码: <strong>passwordA</strong></li>
+                        <li>用户名: <strong>B</strong>, 密码: <strong>passwordB</strong></li>
+                    </ul>
+                    <p class="mt-2 mb-0"><small>规则：A提交的申请由B审批，B提交的申请由A审批</small></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

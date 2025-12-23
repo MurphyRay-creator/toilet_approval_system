@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}审批申请 - 上厕所审批系统{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-warning">
+                <h4 class="mb-0"><i class="bi bi-clipboard-check"></i> 审批上厕所申请</h4>
+            </div>
+            <div class="card-body">
+                <!-- 申请信息 -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">申请详情</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th width="30%">申请ID:</th>
+                                <td>#{{ request.id }}</td>
+                            </tr>
+                            <tr>
+                                <th>申请人:</th>
+                                <td>{{ applicant.username }} ({{ applicant.role }})</td>
+                            </tr>
+                            <tr>
+                                <th>申请时间:</th>
+                                <td>{{ request.apply_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            </tr>
+                            <tr>
+                                <th>申请原因:</th>
+                                <td>{{ request.reason }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- 审批表单 -->
+                <form method="POST" action="{{ url_for('approve_request', request_id=request.id) }}">
+                    <!-- 移除 csrf_token -->
+                    
+                    <div class="mb-4">
+                        <label for="decision" class="form-label">审批决定</label>
+                        <select class="form-select" id="decision" name="decision" required>
+                            <option value="">请选择...</option>
+                            <option value="approve">批准</option>
+                            <option value="reject">拒绝</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="notes" class="form-label">审批意见</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3" 
+                                  placeholder="请输入审批意见（可选）..."></textarea>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('view_requests_to_approve') }}" class="btn btn-secondary me-md-2">返回</a>
+                        <button type="submit" class="btn btn-primary">提交审批</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

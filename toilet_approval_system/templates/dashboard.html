@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>仪表板 - 上厕所审批系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .stats-card {
+            transition: transform 0.3s;
+        }
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.85em;
+        }
+        .badge-pending { background-color: #ffc107; color: #000; }
+        .badge-approved { background-color: #28a745; color: #fff; }
+        .badge-rejected { background-color: #dc3545; color: #fff; }
+        .badge-cancelled { background-color: #6c757d; color: #fff; }
+        .user-menu {
+            margin-right: 15px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('dashboard') }}">🚽 上厕所审批系统</a>
+            
+            <!-- 移动端菜单按钮 -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('dashboard') }}">首页</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('submit_request') }}">提交申请</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('view_my_requests') }}">我的申请</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('view_requests_to_approve') }}">待我审批</a>
+                    </li>
+                </ul>
+                
+                <!-- 用户账户管理下拉菜单 -->
+                <div class="navbar-nav">
+                    <div class="nav-item dropdown user-menu">
+                        <a class="nav-link dropdown-toggle text-white" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <strong>{{ current_user.username }}</strong> ({{ current_user.role }})
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li class="dropdown-header">账户管理</li>
+                            <li><a class="dropdown-item" href="{{ url_for('change_password') }}">修改密码</a></li>
+                            {% if current_user.is_admin() %}
+                            <li><a class="dropdown-item" href="{{ url_for('admin_users') }}">用户管理</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            {% endif %}
+                            <li class="dropdown-header">系统</li>
+                            <li><a class="dropdown-item" href="{{ url_for('logout') }}">退出登录</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h1 class="mb-4">欢迎回来，{{ current_user.username }}！</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- 统计卡片 -->
+        <div class="row mb-5">
+            <div class="col-md-3">
+                <div class="card stats-card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">总申请数</h5>
+                        <h2 class="display-4">{{ total_requests }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card bg-warning text-dark">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">待审批</h5>
+                        <h2 class="display-4">{{ pending_requests }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <a href="{{ url_for('view_requests_to_approve') }}" class="text-decoration-none">
+                    <div class="card stats-card bg-info text-white">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">待我审批</h5>
+                            <h2 class="display-4">{{ requests_to_approve|length }}</h2>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-3">
+                <a href="{{ url_for('submit_request') }}" class="text-decoration-none">
+                    <div class="card stats-card bg-success text-white">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">提交申请</h5>
+                            <h2 class="display-4">+</h2>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- 待审批的申请 -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">待审批的申请</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if requests_to_approve %}
+                        <div class="list-group">
+                            {% for req in requests_to_approve %}
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">申请 #{{ req.id }}</h6>
+                                    <small>{{ req.apply_time.strftime('%m-%d %H:%M') }}</small>
+                                </div>
+                                <p class="mb-1"><strong>申请人：</strong>{{ req.get_applicant().username }}</p>
+                                <p class="mb-1"><strong>原因：</strong>{{ req.reason }}</p>
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <span class="status-badge badge-{{ req.status }}">
+                                        {{ req.status_cn }}
+                                    </span>
+                                    <a href="{{ url_for('approve_request', request_id=req.id) }}" class="btn btn-sm btn-success">审批</a>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="text-center mt-3">
+                            <a href="{{ url_for('view_requests_to_approve') }}" class="btn btn-warning">查看全部</a>
+                        </div>
+                        {% else %}
+                        <p class="text-center text-muted">暂无待审批的申请</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 我的最近申请 -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">我的最近申请</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if my_recent_requests %}
+                        <div class="list-group">
+                            {% for req in my_recent_requests %}
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">申请 #{{ req.id }}</h6>
+                                    <small>{{ req.apply_time.strftime('%m-%d %H:%M') }}</small>
+                                </div>
+                                <p class="mb-1"><strong>审批人：</strong>{{ req.get_approver().username }}</p>
+                                <p class="mb-1"><strong>原因：</strong>{{ req.reason }}</p>
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <span class="status-badge badge-{{ req.status }}">
+                                        {{ req.status_cn }}
+                                    </span>
+                                    <div>
+                                        <a href="{{ url_for('request_details', request_id=req.id) }}" class="btn btn-sm btn-info">详情</a>
+                                        {% if req.status == 'pending' %}
+                                        <a href="{{ url_for('cancel_request', request_id=req.id) }}" class="btn btn-sm btn-warning" onclick="return confirm('确定要取消此申请吗？')">取消</a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="text-center mt-3">
+                            <a href="{{ url_for('view_my_requests') }}" class="btn btn-info">查看全部</a>
+                        </div>
+                        {% else %}
+                        <p class="text-center text-muted">暂无申请记录</p>
+                        <div class="text-center">
+                            <a href="{{ url_for('submit_request') }}" class="btn btn-primary">提交第一个申请</a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 快速操作 -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">快速操作</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-md-4 mb-3">
+                                <a href="{{ url_for('submit_request') }}" class="btn btn-primary btn-lg w-100">
+                                    提交新申请
+                                </a>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <a href="{{ url_for('view_my_requests') }}" class="btn btn-info btn-lg w-100">
+                                    我的申请记录
+                                </a>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <a href="{{ url_for('view_requests_to_approve') }}" class="btn btn-warning btn-lg w-100">
+                                    待我审批
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="mt-5 py-3 bg-light">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-12">
+                    <h6>系统说明</h6>
+                    <ul class="list-unstyled">
+                        <li>• A提交的申请由B审批</li>
+                        <li>• B提交的申请由A审批</li>
+                        <li>• 申请状态：待审批 → 已批准/已拒绝/已取消</li>
+                        <li>• 当前用户：{{ current_user.username }} (角色: {{ current_user.role }})</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
