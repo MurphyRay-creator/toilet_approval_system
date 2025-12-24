@@ -1,6 +1,14 @@
-Flask==3.0.0
+# 核心Flask依赖
+Flask==2.3.3
 Flask-Login==0.6.3
 Flask-SQLAlchemy==3.1.1
-Werkzeug==3.0.1
-psycopg2-binary==2.9.9
+
+# 密码加密和WSGI服务器（生产环境必需）
+Werkzeug==2.3.7
 gunicorn==21.2.0
+
+# PostgreSQL驱动（Render默认用PostgreSQL）
+psycopg2-binary==2.9.9
+
+# 可选：环境变量管理
+python-dotenv==1.0.0
